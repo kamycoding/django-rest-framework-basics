@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from market_app.models import Market
-from .serializers import MarketSerializer
+from market_app.models import Market, Seller
+from .serializers import MarketSerializer, SellerCreateSerializer, SellerDetailSerializer
 
 
 @api_view(['GET', 'POST'])
@@ -38,3 +38,17 @@ def market_single_view(request, pk):
 
     market.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'POST'])
+def sellers_view(request):
+    if request.method == 'GET':
+        sellers = Seller.objects.prefetch_related('markets')
+        serializer = SellerDetailSerializer(sellers, many=True)
+        return Response(serializer.data)
+
+    serializer = SellerCreateSerializer(data=request.data)
+    if serializer.is_valid():
+        seller = serializer.save()
+        return Response(SellerDetailSerializer(seller).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
