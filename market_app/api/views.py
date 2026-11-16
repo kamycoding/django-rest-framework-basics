@@ -3,8 +3,14 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from market_app.models import Market, Seller
-from .serializers import MarketSerializer, SellerCreateSerializer, SellerDetailSerializer
+from market_app.models import Market, Product, Seller
+from .serializers import (
+    MarketSerializer,
+    ProductCreateSerializer,
+    ProductDetailSerializer,
+    SellerCreateSerializer,
+    SellerDetailSerializer,
+)
 
 
 @api_view(['GET', 'POST'])
@@ -52,3 +58,36 @@ def sellers_view(request):
         seller = serializer.save()
         return Response(SellerDetailSerializer(seller).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+def products_view(request):
+    if request.method == 'GET':
+        products = Product.objects.select_related('market', 'seller')
+        serializer = ProductDetailSerializer(products, many=True)
+        return Response(serializer.data)
+
+    serializer = ProductCreateSerializer(data=request.data)
+    if serializer.is_valid():
+        product = serializer.save()
+        return Response(ProductDetailSerializer(product).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def product_single_view(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+
+    if request.method == 'GET':
+        serializer = ProductDetailSerializer(product)
+        return Response(serializer.data)
+
+    if request.method == 'PUT':
+        serializer = ProductCreateSerializer(product, data=request.data)
+        if serializer.is_valid():
+            product = serializer.save()
+            return Response(ProductDetailSerializer(product).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    product.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

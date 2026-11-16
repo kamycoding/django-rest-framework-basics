@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from market_app.models import Market, Seller
+from market_app.models import Market, Product, Seller
 
 
 class MarketSerializer(serializers.Serializer):
@@ -47,3 +47,45 @@ class SellerCreateSerializer(serializers.Serializer):
         markets = Market.objects.filter(id__in=market_ids)
         seller.markets.set(markets)
         return seller
+
+
+class ProductDetailSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=255)
+    description = serializers.CharField()
+    price = serializers.DecimalField(max_digits=50, decimal_places=2)
+    market = serializers.StringRelatedField()
+    seller = serializers.StringRelatedField()
+
+
+class ProductCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    description = serializers.CharField()
+    price = serializers.DecimalField(max_digits=50, decimal_places=2, min_value=0)
+    market = serializers.IntegerField(write_only=True)
+    seller = serializers.IntegerField(write_only=True)
+
+    # Returning the instance lets create() and update() pass validated_data straight to the model.
+    def validate_market(self, value):
+        try:
+            return Market.objects.get(pk=value)
+        except Market.DoesNotExist:
+            raise serializers.ValidationError('Market with this id does not exist.')
+
+    def validate_seller(self, value):
+        try:
+            return Seller.objects.get(pk=value)
+        except Seller.DoesNotExist:
+            raise serializers.ValidationError('Seller with this id does not exist.')
+
+    def create(self, validated_data):
+        return Product.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.price = validated_data.get('price', instance.price)
+        instance.market = validated_data.get('market', instance.market)
+        instance.seller = validated_data.get('seller', instance.seller)
+        instance.save()
+        return instance
