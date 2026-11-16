@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local development database
+db.sqlite3
+
+# Secrets and local environment settings
+.env
+.env.*
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
