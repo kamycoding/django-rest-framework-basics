@@ -11,6 +11,7 @@ db.sqlite3
 # Secrets and local environment settings
 .env
 .env.*
+!.env.example
 
 # Editor and OS files
 .vscode/
